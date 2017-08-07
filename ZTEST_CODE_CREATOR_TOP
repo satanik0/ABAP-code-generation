@@ -1,0 +1,7 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZTEST_CODE_CREATOR_TOP
+*&---------------------------------------------------------------------*
+TYPES: BEGIN OF ty_output,
+         line TYPE char75,
+       END OF ty_output.
+DATA : i_output TYPE STANDARD TABLE OF ty_output.
