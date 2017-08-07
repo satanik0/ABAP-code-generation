@@ -1,0 +1,204 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZTEST_CODE_CREATOR_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Form  VALIDATE_NAME
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM validate_name .
+  SHIFT p_prog LEFT DELETING LEADING space.
+  CONDENSE p_prog NO-GAPS.
+  TRANSLATE p_prog TO UPPER CASE.
+  DATA(lv_len) = strlen( p_prog ).
+  IF lv_len > 30.
+    MESSAGE 'Program name can only contain 30 characters' TYPE 'E'.
+  ELSEIF p_prog+0(1) NE 'Y' AND p_prog+0(1) NE 'Z'.
+    MESSAGE 'Custom program should start with Y or Z' TYPE 'E'.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*&      Form  CREATE_TEMPLATE
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM create_template .
+  DATA : lw_output TYPE ty_output,
+         lv_date   TYPE char10,
+         lv_str    TYPE char75.
+*   append modlog
+  DEFINE add_row.
+    lw_output-line = &1.
+    APPEND lw_output to i_output.
+    CLEAR lw_output.
+  END-OF-DEFINITION.
+
+  add_row '*----------------------------------------------------------------------*'.
+  CONCATENATE '* Program Name  : ' p_prog INTO lv_str SEPARATED BY space .
+  add_row lv_str.
+  CLEAR : lv_str.
+  add_row '* Program ID   :                                                       *'.
+  add_row '* Program type : Report                                                *'.
+  add_row '* Workstream   :                                                       *'.
+  add_row '* Vendor       : Infosys                                               *'.
+  SELECT SINGLE name_textc
+    FROM user_addr
+    INTO @DATA(lv_name)
+    WHERE bname = @sy-uname.
+
+  CONCATENATE '* Author       :'  lv_name INTO lv_str SEPARATED BY space.
+  add_row lv_str.
+  CLEAR : lv_str.
+  WRITE sy-datum USING EDIT MASK '__/__/____' TO lv_date.
+  CONCATENATE '* Create Date  :'  lv_date INTO lv_str SEPARATED BY space..
+  add_row lv_str.
+  CLEAR: lv_str, lv_date.
+  add_row '* Transport no :'.
+  add_row '* CR number    :'.
+  add_row '* Description  : '.
+  add_row '*----------------------------------------------------------------------*'.
+  add_row '* Change History'.
+  add_row '*----------------------------------------------------------------------*'.
+  add_row '* Mod #  | Date        |    Author          |  Reference #  |    CTS   *'.
+  add_row '*----------------------------------------------------------------------*'.
+  TRANSLATE p_prog TO LOWER CASE.
+  CONCATENATE 'REPORT' p_prog '.' INTO lv_str SEPARATED BY space.
+  add_row lv_str.
+  CLEAR lv_str.
+  add_row '* Data declaration'.
+  CONCATENATE '*INCLUDE '  p_prog  INTO lv_str SEPARATED BY space.
+  CONCATENATE lv_str '_top.' INTO lv_str.
+  add_row lv_str.
+  CLEAR lv_str.
+  add_row '*Selection screen'.
+  CONCATENATE '*INCLUDE ' p_prog INTO lv_str SEPARATED BY space.
+  CONCATENATE lv_str '_sel.' INTO lv_str.
+  add_row lv_str.
+  CLEAR lv_str.
+  add_row '*Subroutines'.
+  CONCATENATE '*INCLUDE ' p_prog INTO lv_str SEPARATED BY space.
+  CONCATENATE lv_str '_f01.' INTO lv_str.
+  add_row lv_str.
+  CLEAR lv_str.
+  add_row '***** Initialization *****'.
+  add_row ' INITIALIZATION.'.
+  add_row '* Clear data'.
+  add_row '*   PERFORM f_clear_data.'.
+  add_row ''.
+  add_row ' AT SELECTION-SCREEN.'.
+  add_row '*Validate input'.
+  add_row '*   PERFORM f_validate_input.'.
+  add_row ''.
+  add_row '******* Start of Selection ********'.
+  add_row ' START-OF-SELECTION.'.
+  add_row '* Fetch data'.
+  add_row '*   PERFORM f_fetch_data CHANGING i_data.'.
+  add_row '* Process data'.
+  add_row '*   PERFORM f_process_data USING i_data'.
+  add_row '*                        CHANGING i_output.'.
+  add_row ''.
+  add_row '******* End of Selection ********'.
+  add_row ' END-OF-SELECTION.'.
+  add_row '* Display data'.
+  add_row '*   PERFORM f_display_data USING i_output.'.
+  add_row '* Clear data'.
+  add_row '*   PERFORM f_clear_data.'.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*&      Form  DISPLAY_TEMPLATE
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM display_template .
+  DATA : lv_rc TYPE i.
+  IF i_output IS NOT INITIAL.
+* Put into clipboard
+    cl_gui_frontend_services=>clipboard_export(
+*    EXPORTING
+*      no_auth_check        = SPACE    " Switch off Check for Access Rights
+      IMPORTING
+        data                 =  i_output   " Data
+      CHANGING
+        rc                   =  lv_rc  " Return Code
+      EXCEPTIONS
+        cntl_error           = 1
+        error_no_gui         = 2
+        not_supported_by_gui = 3
+        no_authority         = 4
+        OTHERS               = 5
+    ).
+    IF sy-subrc = 0.
+*      LOOP AT i_output ASSIGNING FIELD-SYMBOL(<lfs_output>).
+*        WRITE:/ <lfs_output>-line.
+*      ENDLOOP.
+      MESSAGE 'Code has been copied to clipboard. Press CTRL+V after creating a new program.' TYPE 'S'.
+    ENDIF.
+
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*&      Form  CREATE_REPORT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM create_report .
+  TRANSLATE p_prog TO UPPER CASE.
+  SHIFT p_prog LEFT DELETING LEADING space.
+  SELECT SINGLE * FROM trdir
+    INTO @DATA(lw_trdir)
+    WHERE name = @p_prog.
+  IF sy-subrc <> 0.
+    AUTHORITY-CHECK OBJECT 'S_DEVELOP'
+    ID 'OBJTYPE' FIELD 'PROG'
+    ID 'ACTVT'  FIELD '01'.
+    IF sy-subrc = 0.
+      INSERT REPORT p_prog FROM i_output.
+      IF sy-subrc = 0.
+        PERFORM display_report USING space.
+      ENDIF.
+    ELSE.
+      MESSAGE 'User does not have authorization to create a program' TYPE 'E'.
+    ENDIF.
+  ELSE.
+    MESSAGE 'Program already exists with same name. the new code has been copied to clipboard. Press CTRL+V to paste.' TYPE 'I'.
+    PERFORM display_report USING 'X'.
+  ENDIF.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*&      Form  DISPLAY_REPORT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM display_report using p_mode TYPE char1.
+  DATA l_include TYPE rs38l-include.
+  l_include = p_prog.
+  CALL FUNCTION 'EDITOR_PROGRAM'
+    EXPORTING
+      appid         = 'PG'
+      display       = p_mode
+*     line          = l_line
+      program       = l_include
+*     topline       = l_line
+      varied        = 'X'
+    EXCEPTIONS
+      error_message = 3
+      application   = 1
+      OTHERS        = 2.
+ENDFORM.
