@@ -46,7 +46,7 @@ FORM create_template .
   add_row '* Program ID   :                                                       *'.
   add_row '* Program type : Report                                                *'.
   add_row '* Workstream   :                                                       *'.
-  add_row '* Vendor       : Infosys                                               *'.
+  add_row '* Vendor       :                                                *'.
   SELECT SINGLE name_textc
     FROM user_addr
     INTO @DATA(lv_name)
