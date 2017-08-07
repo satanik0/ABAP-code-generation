@@ -1,0 +1,6 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZTEST_CODE_CREATOR_SEL
+*&---------------------------------------------------------------------*
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE text-t01.
+  PARAMETERS : p_prog TYPE progname.
+SELECTION-SCREEN end OF block b1.
