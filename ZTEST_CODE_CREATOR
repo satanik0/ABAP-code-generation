@@ -1,0 +1,38 @@
+*----------------------------------------------------------------------*
+* Program Name  : ZTEST_CODE_CREATOR
+* Program ID   :                                                       *
+* Program type : Report                                                *
+* Workstream   :                                                       *
+* Vendor       : Infosys                                               *
+* Author       : Satanik Ganguly
+* Create Date  : 02/06/2017
+* Transport no :
+* CR number    :
+* Description  :
+*----------------------------------------------------------------------*
+* Change History
+*----------------------------------------------------------------------*
+* Mod #  | Date        |    Author          |  Reference #  |    CTS   *
+*----------------------------------------------------------------------*
+REPORT ztest_code_creator .
+* Data declaration
+INCLUDE ztest_code_creator_top.
+*Selection screen
+INCLUDE ztest_code_creator_sel.
+*Subroutines
+INCLUDE ztest_code_creator_f01.
+
+ AT SELECTION-SCREEN.
+*Validate input
+   PERFORM validate_name.
+******* Start of Selection ********
+ START-OF-SELECTION.
+* create template
+   PERFORM create_template.
+
+******* End of Selection ********
+ END-OF-SELECTION.
+* Display template
+  PERFORM display_template.
+* create report
+  PERFORM create_report.
